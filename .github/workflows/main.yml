@@ -1,117 +1,33 @@
-name: Amul Products - Gist Sync
+name: Amul Tracker Every 30 Minutes
 
-# Trigger on schedule (every 2 hours) or manual
 on:
   schedule:
-    # Run every 2 hours
-    - cron: "0 */1 * * *"
-  
-  # Allow manual trigger from Actions tab
+    # Runs every 30 minutes
+    - cron: '0,5 * * * *'
+  # Manual trigger
   workflow_dispatch:
-    inputs:
-      pincodes:
-        description: "Comma-separated pincodes (default: use env)"
-        required: false
-        default: "412101,400001,560001"
 
 jobs:
-  sync:
+  track:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          python-version: "3.12"
-      
+          bun-version: latest
+
       - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install requests
-      
-      - name: Fetch Amul products
+        run: bun install
+
+      - name: Run Amul Tracker
         env:
-          AMUL_PINCODES: ${{ github.event.inputs.pincodes || '412101,400001,560001' }}
-          LOG_FILE: /tmp/amul_gist.log
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PINCODE: ${{ secrets.AMUL_PINCODE }}
+          SUBSTORE_ID: ${{ secrets.AMUL_SUBSTORE_ID }}
         run: |
-          python3 gist-automation/amul_api_gist.py \
-            --pincodes "$AMUL_PINCODES" \
-            --output amul_results.json \
-            --verbose
-      
-      - name: Upload to Gist
-        env:
-          GITHUB_TOKEN: ${{ secrets.AMUL_GIST_TOKEN }}
-          GIST_ID: ${{ secrets.AMUL_GIST_ID }}
-        run: |
-          if [ -z "$GIST_ID" ] || [ -z "$GITHUB_TOKEN" ]; then
-            echo "⚠️  Skipping Gist upload - env vars not set"
-            exit 0
-          fi
-          
-          python3 -c "
-          import requests
-          import json
-          
-          with open('amul_results.json', 'r') as f:
-              content = f.read()
-          
-          payload = {
-              'files': {
-                  'amul_results.json': {'content': content}
-              }
-          }
-          
-          r = requests.patch(
-              f'https://api.github.com/gists/${{ secrets.AMUL_GIST_ID }}',
-              json=payload,
-              headers={'Authorization': 'token ${{ secrets.AMUL_GIST_TOKEN }}'},
-              timeout=10
-          )
-          
-          if r.status_code == 200:
-              print('✅ Gist updated!')
-              print(r.json()['html_url'])
-          else:
-              print(f'❌ Failed: {r.status_code}')
-              print(r.text)
-              exit(1)
-          "
-      
-      - name: Create summary
-        if: always()
-        run: |
-          echo "## Amul Products Sync" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f amul_results.json ]; then
-            python3 -c "
-            import json
-            with open('amul_results.json') as f:
-                data = json.load(f)
-            meta = data['metadata']
-            print(f'✅ Success: {meta[\"pincodes_success\"]}/{meta[\"pincodes_requested\"]}')
-            print(f'📦 Products: {meta[\"total_products\"]}')
-            print(f'⏱️  Time: {meta[\"execution_time_seconds\"]}s')
-            " >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f /tmp/amul_gist.log ]; then
-            echo "### Logs" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -20 /tmp/amul_gist.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-      
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: amul-results
-          path: |
-            amul_results.json
-            /tmp/amul_gist.log
-          retention-days: 30
+          bun run amul-simple-tracker.ts
