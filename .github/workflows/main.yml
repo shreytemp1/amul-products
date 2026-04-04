@@ -37,7 +37,7 @@ jobs:
           AMUL_PINCODES: ${{ github.event.inputs.pincodes || '412101,400001,560001' }}
           LOG_FILE: /tmp/amul_gist.log
         run: |
-          python3 amul_api_gist.py \
+          python3 gist-automation/amul_api_gist.py \
             --pincodes "$AMUL_PINCODES" \
             --output amul_results.json \
             --verbose
