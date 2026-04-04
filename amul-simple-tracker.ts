@@ -179,15 +179,28 @@ class SimpleAmulTracker {
         )
       }
 
-      await axios.post(
+      const response = await axios.post(
         `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
         {
-          chat_id: CHAT_ID,
+          chat_id: Number(CHAT_ID),
           text: message,
           parse_mode: 'HTML',
           disable_web_page_preview: true
+        },
+        {
+          validateStatus: () => true // Capture all status codes
         }
       )
+
+      if (response.status !== 200) {
+        console.error(
+          `Telegram API returned status ${response.status}:`,
+          JSON.stringify(response.data, null, 2)
+        )
+        throw new Error(
+          `Telegram API error: ${response.status} - ${JSON.stringify(response.data)}`
+        )
+      }
 
       console.log('✅ Message sent to Telegram')
     } catch (error) {
@@ -241,11 +254,13 @@ class SimpleAmulTracker {
 
       console.log('\n✅ Tracker completed successfully\n')
     } catch (error) {
-      console.error('\n❌ Tracker failed:', error)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      console.error('\n❌ Tracker failed:', errorMessage)
       if (BOT_TOKEN && CHAT_ID) {
         try {
           await this.sendTelegramMessage(
-            `❌ <b>Amul Tracker Error</b>\n\n${String(error)}`
+            `❌ <b>Amul Tracker Error</b>\n\n<code>${errorMessage.substring(0, 200)}</code>`
           )
         } catch (e) {
           console.error('Could not send error message to Telegram')
