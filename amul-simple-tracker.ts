@@ -9,10 +9,10 @@ import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 
 // ============ Configuration ============
-const PINCODE = process.env.PINCODE || '412101' // Pune
+const PINCODE = process.env.PINCODE || '400019' // Pune
 const BOT_TOKEN = process.env.BOT_TOKEN || '8517451964:AAGOxGRXcCIdBzM4CAN9GRCMopXK3PvWev0'
 const CHAT_ID = process.env.CHAT_ID || '1785779527' // @Spatel776
-const SUBSTORE_ID = process.env.SUBSTORE_ID || '66506004a7cddee1b8adb014' // Pune BR
+const SUBSTORE_ID = process.env.SUBSTORE_ID || '66506000c8f2d6e221b9193a' // Pune BR
 
 // ============ Types ============
 interface AmulProduct {
