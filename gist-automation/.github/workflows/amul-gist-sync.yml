@@ -1,0 +1,117 @@
+name: Amul Products - Gist Sync
+
+# Trigger on schedule (every 2 hours) or manual
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: "0 */2 * * *"
+  
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+    inputs:
+      pincodes:
+        description: "Comma-separated pincodes (default: use env)"
+        required: false
+        default: "412101,400001,560001"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests
+      
+      - name: Fetch Amul products
+        env:
+          AMUL_PINCODES: ${{ github.event.inputs.pincodes || '412101,400001,560001' }}
+          LOG_FILE: /tmp/amul_gist.log
+        run: |
+          python3 amul_api_gist.py \
+            --pincodes "$AMUL_PINCODES" \
+            --output amul_results.json \
+            --verbose
+      
+      - name: Upload to Gist
+        env:
+          GITHUB_TOKEN: ${{ secrets.AMUL_GIST_TOKEN }}
+          GIST_ID: ${{ secrets.AMUL_GIST_ID }}
+        run: |
+          if [ -z "$GIST_ID" ] || [ -z "$GITHUB_TOKEN" ]; then
+            echo "⚠️  Skipping Gist upload - env vars not set"
+            exit 0
+          fi
+          
+          python3 -c "
+          import requests
+          import json
+          
+          with open('amul_results.json', 'r') as f:
+              content = f.read()
+          
+          payload = {
+              'files': {
+                  'amul_results.json': {'content': content}
+              }
+          }
+          
+          r = requests.patch(
+              f'https://api.github.com/gists/${{ secrets.AMUL_GIST_ID }}',
+              json=payload,
+              headers={'Authorization': 'token ${{ secrets.AMUL_GIST_TOKEN }}'},
+              timeout=10
+          )
+          
+          if r.status_code == 200:
+              print('✅ Gist updated!')
+              print(r.json()['html_url'])
+          else:
+              print(f'❌ Failed: {r.status_code}')
+              print(r.text)
+              exit(1)
+          "
+      
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## Amul Products Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f amul_results.json ]; then
+            python3 -c "
+            import json
+            with open('amul_results.json') as f:
+                data = json.load(f)
+            meta = data['metadata']
+            print(f'✅ Success: {meta[\"pincodes_success\"]}/{meta[\"pincodes_requested\"]}')
+            print(f'📦 Products: {meta[\"total_products\"]}')
+            print(f'⏱️  Time: {meta[\"execution_time_seconds\"]}s')
+            " >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/amul_gist.log ]; then
+            echo "### Logs" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -20 /tmp/amul_gist.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: amul-results
+          path: |
+            amul_results.json
+            /tmp/amul_gist.log
+          retention-days: 30
