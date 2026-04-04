@@ -4,7 +4,7 @@ name: Amul Products - Gist Sync
 on:
   schedule:
     # Run every 2 hours
-    - cron: "0 */2 * * *"
+    - cron: "0 */1 * * *"
   
   # Allow manual trigger from Actions tab
   workflow_dispatch:
