@@ -1,0 +1,38 @@
+name: Amul Stock Notify
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/7 * * * *'
+
+concurrency:
+  group: amul-stock-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+      AMUL_PINCODE: '412101'
+      AMUL_SUBSTORE_ALIAS: 'pune-br'
+      AMUL_SUBSTORE_ID: '66506004a7cddee1b8adb014'
+      SEND_EMPTY_UPDATE: ${{ vars.SEND_EMPTY_UPDATE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run stock check
+        run: bun run start
