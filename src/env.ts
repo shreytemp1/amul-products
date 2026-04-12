@@ -25,9 +25,7 @@ const envSchema = z.object({
   AMUL_PRODUCT_MATCHERS: z.preprocess(normalizeEmpty, z.string().optional()),
   SEND_EMPTY_UPDATE: z
     .preprocess(normalizeEmpty, z.string().optional())
-    .optional()
-    .default('true')
-    .transform((value: string) => value.toLowerCase() === 'true')
+    .transform((value: string | undefined) => (value ?? 'true').toLowerCase() === 'true')
 })
 
 const parsedResult = envSchema.safeParse(process.env)
