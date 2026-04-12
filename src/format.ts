@@ -12,12 +12,19 @@ export const getProductUrl = (product: AmulProduct): string =>
   `https://shop.amul.com/en/product/${product.alias}`
 
 export const describeProduct = (product: AmulProduct): string =>
-  `${product.name} | sku=${product.sku} | alias=${product.alias} | available=${product.available} | inventory=${product.inventory_quantity} | low_stock=${product.inventory_low_stock_quantity} | allow_oos=${product.inventory_allow_out_of_stock ?? '0'}`
+  `${product.name} | sku=${product.sku} | alias=${product.alias} | available=${product.available} | inventory=${product.inventory_quantity} | low_stock=${product.inventory_low_stock_quantity} | allow_oos=${product.inventory_allow_out_of_stock ?? '0'} | default_variant=${product.default_variant ?? 'n/a'} | variants=${product.variants?.length ?? 0}`
 
 export const getInventoryQuantity = (product: AmulProduct): number => {
+  if (
+    product.inventory_low_stock_quantity > product.inventory_quantity &&
+    (product.inventory_allow_out_of_stock || '0') === '0'
+  ) {
+    return 0
+  }
+
   return product.inventory_quantity < 0
     ? 0
-    : product.inventory_quantity
+    : product.inventory_quantity - product.inventory_low_stock_quantity
 }
 
 export const isAvailableToPurchase = (product: AmulProduct): boolean => {
@@ -25,7 +32,11 @@ export const isAvailableToPurchase = (product: AmulProduct): boolean => {
     return true
   }
 
-  return product.available > 0 && product.inventory_quantity > 0
+  if (product.available <= 0) {
+    return false
+  }
+
+  return product.inventory_quantity >= product.inventory_low_stock_quantity
 }
 
 export const matchesTarget = (
@@ -96,7 +107,8 @@ export const buildAvailabilityBlocks = (
       )}</a></b>`,
       `   SKU: <code>${escapeHtml(product.sku)}</code>`,
       `   Price: <b>${product.price}</b>`,
-      `   Inventory Qty: <b>${quantity}</b>`
+      `   Available Qty: <b>${quantity}</b>`,
+      `   Available Flag: <b>${product.available > 0 ? 'Yes' : 'No'}</b>`
     ].join('\n')
   })
 

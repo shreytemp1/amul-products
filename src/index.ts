@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     const purchasable = isAvailableToPurchase(product)
 
     console.log(
-      `[App] ${matches ? 'MATCH' : 'SKIP '} ${describeProduct(product)} | matches=${matches} | inventory_positive=${product.inventory_quantity > 0} | purchasable=${purchasable}`
+      `[App] ${matches ? 'MATCH' : 'SKIP '} ${describeProduct(product)} | matches=${matches} | available_flag=${product.available > 0} | purchasable=${purchasable}`
     )
 
     return {
