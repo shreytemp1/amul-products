@@ -83,21 +83,11 @@ export const buildAvailabilityBlocks = (
   pincode: string,
   substoreAlias: string
 ): string[] => {
-  const timestamp = new Date().toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata'
-  })
-
   if (products.length === 0) {
-    return [
-      `Amul stock check for <b>${escapeHtml(pincode)}</b> / <b>${escapeHtml(
-        substoreAlias
-      )}</b>\nChecked at <b>${escapeHtml(timestamp)}</b>\n\nNo target products are currently available.`
-    ]
+    return ['No target products are currently available.']
   }
 
-  const header = `Amul stock check for <b>${escapeHtml(pincode)}</b> / <b>${escapeHtml(
-    substoreAlias
-  )}</b>\nChecked at <b>${escapeHtml(timestamp)}</b>\n\nAvailable products:`
+  const header = 'Available products:'
 
   const blocks = products.map((product, index) => {
     const quantity = getInventoryQuantity(product)
@@ -105,10 +95,8 @@ export const buildAvailabilityBlocks = (
       `${index + 1}. <b><a href="${escapeHtml(getProductUrl(product))}">${escapeHtml(
         product.name
       )}</a></b>`,
-      `   SKU: <code>${escapeHtml(product.sku)}</code>`,
       `   Price: <b>${product.price}</b>`,
-      `   Available Qty: <b>${quantity}</b>`,
-      `   Available Flag: <b>${product.available > 0 ? 'Yes' : 'No'}</b>`
+      `   Available Qty: <b>${quantity}</b>`
     ].join('\n')
   })
 
