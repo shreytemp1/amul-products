@@ -15,9 +15,9 @@ jobs:
     timeout-minutes: 10
     environment: Configure amul
     env:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
+      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS || vars.TELEGRAM_CHAT_IDS }}
       AMUL_PINCODE: '412101'
       AMUL_SUBSTORE_ALIAS: 'pune-br'
       AMUL_SUBSTORE_ID: '66506004a7cddee1b8adb014'
