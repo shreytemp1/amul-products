@@ -23,6 +23,18 @@ jobs:
       SEND_EMPTY_UPDATE: ${{ vars.SEND_EMPTY_UPDATE }}
 
     steps:
+      - name: Validate required secrets
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "::error title=Missing secret::Set TELEGRAM_BOT_TOKEN in repository secrets."
+            exit 1
+          fi
+
+          if [ -z "$TELEGRAM_CHAT_ID" ] && [ -z "$TELEGRAM_CHAT_IDS" ]; then
+            echo "::error title=Missing secret::Set TELEGRAM_CHAT_ID or TELEGRAM_CHAT_IDS in repository secrets."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 

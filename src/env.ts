@@ -30,7 +30,20 @@ const envSchema = z.object({
     .transform((value: string) => value.toLowerCase() === 'true')
 })
 
-const parsed = envSchema.parse(process.env)
+const parsedResult = envSchema.safeParse(process.env)
+
+if (!parsedResult.success) {
+  console.error('Invalid or missing environment variables:')
+
+  for (const issue of parsedResult.error.issues) {
+    const path = issue.path.length ? issue.path.join('.') : '<root>'
+    console.error(`- ${path}: ${issue.message}`)
+  }
+
+  process.exit(1)
+}
+
+const parsed = parsedResult.data
 
 const splitCsv = (value: string): string[] =>
   value
