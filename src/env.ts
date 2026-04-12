@@ -24,7 +24,7 @@ const envSchema = z.object({
   AMUL_PRODUCT_SKUS: z.preprocess(normalizeEmpty, z.string().optional()),
   AMUL_PRODUCT_MATCHERS: z.preprocess(normalizeEmpty, z.string().optional()),
   SEND_EMPTY_UPDATE: z
-    .string()
+    .preprocess(normalizeEmpty, z.string().optional())
     .optional()
     .default('true')
     .transform((value: string) => value.toLowerCase() === 'true')

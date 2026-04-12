@@ -53,10 +53,15 @@ async function main(): Promise<void> {
   console.log(
     `[App] Matched ${scannedProducts.filter(({ matches }) => matches).length} product(s); ${targetProducts.length} are purchasable`
   )
+  console.log(`[App] sendEmptyUpdate=${env.sendEmptyUpdate}`)
 
   if (targetProducts.length === 0 && !env.sendEmptyUpdate) {
     console.log('No target products are available right now. No Telegram message sent.')
     return
+  }
+
+  if (targetProducts.length === 0) {
+    console.log('[App] No purchasable target products found; sending status update anyway.')
   }
 
   const blocks = buildAvailabilityBlocks(targetProducts, env.pincode, store.substore)
