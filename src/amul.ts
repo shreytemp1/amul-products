@@ -62,8 +62,7 @@ export class AmulClient {
       {
         headers: {
           ...defaultHeaders,
-          cookie: await this.jar.getCookieString(requestUrl),
-          tid: await this.calculateTidHeader()
+          cookie: await this.jar.getCookieString(requestUrl)
         }
       }
     ) as { data: string }
