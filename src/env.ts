@@ -26,7 +26,7 @@ const envSchema = z.object({
   SEND_EMPTY_UPDATE: z
     .string()
     .optional()
-    .default('false')
+    .default('true')
     .transform((value: string) => value.toLowerCase() === 'true')
 })
 
