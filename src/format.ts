@@ -25,7 +25,7 @@ export const isAvailableToPurchase = (product: AmulProduct): boolean => {
     return true
   }
 
-  return product.inventory_quantity > 0
+  return product.available > 0 && product.inventory_quantity > 0
 }
 
 export const matchesTarget = (
@@ -96,7 +96,7 @@ export const buildAvailabilityBlocks = (
       )}</a></b>`,
       `   SKU: <code>${escapeHtml(product.sku)}</code>`,
       `   Price: <b>${product.price}</b>`,
-      `   Available Qty: <b>${quantity}</b>`
+      `   Inventory Qty: <b>${quantity}</b>`
     ].join('\n')
   })
 
