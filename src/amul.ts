@@ -2,6 +2,7 @@ import axios from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 
+import { describeProduct } from './format'
 import { AmulProduct, AmulProductsResponse, PincodeRecord } from './types'
 
 const defaultHeaders = {
@@ -40,8 +41,15 @@ export class AmulClient {
   }
 
   public async initialize(): Promise<void> {
-    const homepage = await this.http.get('https://shop.amul.com/en/browse/protein')
+    const homepageUrl = 'https://shop.amul.com/en/browse/protein'
+    console.log(`[Amul] GET ${homepageUrl}`)
+
+    const homepage = await this.http.get(homepageUrl)
     const setCookies = homepage.headers['set-cookie']
+
+    console.log(
+      `[Amul] Homepage status=${homepage.status} set-cookie=${setCookies?.length ?? 0}`
+    )
 
     if (!setCookies?.length) {
       throw new Error('Amul did not return cookies')
@@ -57,20 +65,22 @@ export class AmulClient {
       await this.jar.setCookie(cookie.toString(), requestUrl)
     }
 
-    const infoResponse = await this.http.get(
-      'https://shop.amul.com/user/info.js?_v=' + Date.now(),
-      {
-        headers: {
-          ...defaultHeaders,
-          cookie: await this.jar.getCookieString(requestUrl)
-        }
+    const infoUrl = 'https://shop.amul.com/user/info.js?_v=' + Date.now()
+    console.log(`[Amul] GET ${infoUrl}`)
+
+    const infoResponse = (await this.http.get(infoUrl, {
+      headers: {
+        ...defaultHeaders,
+        cookie: await this.jar.getCookieString(requestUrl)
       }
-    ) as { data: string }
+    })) as { data: string }
 
     const session = JSON.parse(infoResponse.data.replace('session = ', '')) as {
       tid: string
     }
     this.tid = session.tid
+
+    console.log(`[Amul] Session initialized tid=${this.tid.slice(0, 8)}...`)
   }
 
   public async loadStore(): Promise<PincodeRecord> {
@@ -78,16 +88,20 @@ export class AmulClient {
       throw new Error('Amul session not initialized')
     }
 
-    const response = await this.http.get(
-      `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${this.pincode}&filters[0][operator]=regex&cf_cache=1h`,
-      {
-        headers: {
-          ...defaultHeaders,
-          tid: await this.calculateTidHeader(),
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
-        }
+    const pincodeUrl = `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${this.pincode}&filters[0][operator]=regex&cf_cache=1h`
+    console.log(`[Amul] GET ${pincodeUrl}`)
+
+    const response = (await this.http.get(pincodeUrl, {
+      headers: {
+        ...defaultHeaders,
+        tid: await this.calculateTidHeader(),
+        cookie: await this.jar.getCookieString('https://shop.amul.com')
       }
-    ) as { data: { records: PincodeRecord[] } }
+    })) as { status: number; data: { records: PincodeRecord[] } }
+
+    console.log(
+      `[Amul] Pincode response status=${response.status} records=${response.data.records.length}`
+    )
 
     const record = response.data.records.find(
       (entry: PincodeRecord) => entry.substore === this.substoreAlias
@@ -99,7 +113,11 @@ export class AmulClient {
 
     this.pincodeRecord = record
 
-    await this.http.put(
+    console.log(
+      `[Amul] Selected store pincode=${record.pincode} substore=${record.substore} id=${record._id}`
+    )
+
+    const preferenceResponse = await this.http.put(
       'https://shop.amul.com/entity/ms.settings/_/setPreferences',
       { data: { store: record.substore } },
       {
@@ -111,6 +129,10 @@ export class AmulClient {
       }
     )
 
+    console.log(
+      `[Amul] PUT /entity/ms.settings/_/setPreferences status=${preferenceResponse.status} store=${record.substore}`
+    )
+
     return record
   }
 
@@ -119,16 +141,30 @@ export class AmulClient {
       throw new Error('Store is not loaded yet')
     }
 
-    const response = await this.http.get(
-      `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[available]=1&fields[inventory_quantity]=1&fields[metafields]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&substore=${this.substoreId}`,
-      {
-        headers: {
-          ...defaultHeaders,
-          cookie: await this.jar.getCookieString('https://shop.amul.com'),
-          tid: await this.calculateTidHeader()
-        }
+    const productUrl = `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[available]=1&fields[inventory_quantity]=1&fields[metafields]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&substore=${this.substoreId}`
+    console.log(`[Amul] GET ${productUrl}`)
+
+    const response = (await this.http.get(productUrl, {
+      headers: {
+        ...defaultHeaders,
+        cookie: await this.jar.getCookieString('https://shop.amul.com'),
+        tid: await this.calculateTidHeader()
       }
-    ) as { data: AmulProductsResponse }
+    })) as { status: number; data: AmulProductsResponse }
+
+    console.log(
+      `[Amul] Products response status=${response.status} count=${response.data.data.length}`
+    )
+
+    for (const product of response.data.data.slice(0, 10)) {
+      console.log(`[Amul] Product ${describeProduct(product)}`)
+    }
+
+    if (response.data.data.length > 10) {
+      console.log(
+        `[Amul] Product list truncated: ${response.data.data.length - 10} more item(s)`
+      )
+    }
 
     return response.data.data
   }

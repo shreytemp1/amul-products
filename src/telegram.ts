@@ -25,15 +25,20 @@ export async function resolveTelegramRecipients(
 ): Promise<string[]> {
   const cleaned = explicitRecipients.map((recipient) => recipient.trim()).filter(Boolean)
   if (cleaned.length > 0) {
+    console.log(`[Telegram] Using configured recipient(s): ${cleaned.join(', ')}`)
     return cleaned
   }
 
-  const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates`)
+  const getUpdatesUrl = `https://api.telegram.org/bot${botToken}/getUpdates`
+  console.log('[Telegram] No configured recipient found; calling getUpdates')
+
+  const response = await fetch(getUpdatesUrl)
   if (!response.ok) {
     throw new Error(`Telegram getUpdates failed with ${response.status}`)
   }
 
   const payload = (await response.json()) as TelegramUpdate
+  console.log(`[Telegram] getUpdates returned ${payload.result.length} update(s)`)
   const discovered = payload.result
     .map((update) => update.message ?? update.channel_post)
     .filter(Boolean)
@@ -47,6 +52,7 @@ export async function resolveTelegramRecipients(
     )
   }
 
+  console.log(`[Telegram] Discovered chat id: ${chatId}`)
   return [String(chatId)]
 }
 
@@ -55,7 +61,10 @@ export async function sendTelegramMessage(
   chatId: string,
   text: string
 ): Promise<void> {
-  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+  const sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage`
+  console.log(`[Telegram] POST sendMessage chat_id=${chatId}`)
+
+  const response = await fetch(sendMessageUrl, {
     method: 'POST',
     headers: {
       'content-type': 'application/json'
@@ -72,4 +81,6 @@ export async function sendTelegramMessage(
     const body = await response.text()
     throw new Error(`Telegram sendMessage failed with ${response.status}: ${body}`)
   }
+
+  console.log(`[Telegram] sendMessage ok status=${response.status} chat_id=${chatId}`)
 }

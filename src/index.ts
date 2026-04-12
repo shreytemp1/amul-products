@@ -3,6 +3,7 @@ import { env } from './env'
 import {
   buildAvailabilityBlocks,
   chunkBlocks,
+  describeProduct,
   isAvailableToPurchase,
   matchesTarget
 } from './format'
@@ -27,10 +28,31 @@ async function main(): Promise<void> {
   }
 
   const products = await client.fetchProducts()
-  const targetProducts = products
-    .filter((product) => matchesTarget(product, env.productSkus, env.productMatchers))
-    .filter((product) => isAvailableToPurchase(product))
+  console.log(`[App] Scanning ${products.length} product(s) against target filters`)
+
+  const scannedProducts = products.map((product) => {
+    const matches = matchesTarget(product, env.productSkus, env.productMatchers)
+    const purchasable = isAvailableToPurchase(product)
+
+    console.log(
+      `[App] ${matches ? 'MATCH' : 'SKIP '} ${describeProduct(product)} | matches=${matches} | purchasable=${purchasable}`
+    )
+
+    return {
+      product,
+      matches,
+      purchasable
+    }
+  })
+
+  const targetProducts = scannedProducts
+    .filter(({ matches, purchasable }) => matches && purchasable)
+    .map(({ product }) => product)
     .sort((left, right) => right.inventory_quantity - left.inventory_quantity)
+
+  console.log(
+    `[App] Matched ${scannedProducts.filter(({ matches }) => matches).length} product(s); ${targetProducts.length} are purchasable`
+  )
 
   if (targetProducts.length === 0 && !env.sendEmptyUpdate) {
     console.log('No target products are available right now. No Telegram message sent.')
@@ -44,8 +66,12 @@ async function main(): Promise<void> {
     env.telegramChatIds
   )
 
+  console.log(`[App] Telegram recipients: ${recipients.join(', ')}`)
+  console.log(`[App] Sending ${messages.length} message chunk(s)`)
+
   for (const recipient of recipients) {
-    for (const message of messages) {
+    for (const [index, message] of messages.entries()) {
+      console.log(`[App] Sending message ${index + 1}/${messages.length} to ${recipient}`)
       await sendTelegramMessage(env.telegramBotToken, recipient, message)
     }
   }

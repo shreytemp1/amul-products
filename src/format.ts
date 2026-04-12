@@ -11,6 +11,9 @@ const escapeHtml = (value: string): string =>
 export const getProductUrl = (product: AmulProduct): string =>
   `https://shop.amul.com/en/product/${product.alias}`
 
+export const describeProduct = (product: AmulProduct): string =>
+  `${product.name} | sku=${product.sku} | alias=${product.alias} | available=${product.available} | inventory=${product.inventory_quantity} | low_stock=${product.inventory_low_stock_quantity} | allow_oos=${product.inventory_allow_out_of_stock ?? '0'}`
+
 export const getInventoryQuantity = (product: AmulProduct): number => {
   if (
     product.inventory_low_stock_quantity > product.inventory_quantity &&
