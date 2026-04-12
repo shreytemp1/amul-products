@@ -15,16 +15,9 @@ export const describeProduct = (product: AmulProduct): string =>
   `${product.name} | sku=${product.sku} | alias=${product.alias} | available=${product.available} | inventory=${product.inventory_quantity} | low_stock=${product.inventory_low_stock_quantity} | allow_oos=${product.inventory_allow_out_of_stock ?? '0'}`
 
 export const getInventoryQuantity = (product: AmulProduct): number => {
-  if (
-    product.inventory_low_stock_quantity > product.inventory_quantity &&
-    (product.inventory_allow_out_of_stock || '0') === '0'
-  ) {
-    return 0
-  }
-
   return product.inventory_quantity < 0
     ? 0
-    : product.inventory_quantity - product.inventory_low_stock_quantity
+    : product.inventory_quantity
 }
 
 export const isAvailableToPurchase = (product: AmulProduct): boolean => {
@@ -32,11 +25,7 @@ export const isAvailableToPurchase = (product: AmulProduct): boolean => {
     return true
   }
 
-  if (product.available <= 0) {
-    return false
-  }
-
-  return product.inventory_quantity >= product.inventory_low_stock_quantity
+  return product.inventory_quantity > 0
 }
 
 export const matchesTarget = (

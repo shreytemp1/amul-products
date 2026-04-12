@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     const purchasable = isAvailableToPurchase(product)
 
     console.log(
-      `[App] ${matches ? 'MATCH' : 'SKIP '} ${describeProduct(product)} | matches=${matches} | purchasable=${purchasable}`
+      `[App] ${matches ? 'MATCH' : 'SKIP '} ${describeProduct(product)} | matches=${matches} | inventory_positive=${product.inventory_quantity > 0} | purchasable=${purchasable}`
     )
 
     return {
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
     .sort((left, right) => right.inventory_quantity - left.inventory_quantity)
 
   console.log(
-    `[App] Matched ${scannedProducts.filter(({ matches }) => matches).length} product(s); ${targetProducts.length} are purchasable`
+    `[App] Matched ${scannedProducts.filter(({ matches }) => matches).length} product(s); ${targetProducts.length} are alert-worthy`
   )
   console.log(`[App] sendEmptyUpdate=${env.sendEmptyUpdate}`)
 
@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   }
 
   if (targetProducts.length === 0) {
-    console.log('[App] No purchasable target products found; sending status update anyway.')
+    console.log('[App] No alert-worthy target products found; sending status update anyway.')
   }
 
   const blocks = buildAvailabilityBlocks(targetProducts, env.pincode, store.substore)
