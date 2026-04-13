@@ -9,7 +9,7 @@ This is a minimal clone of the original project. It removes MongoDB, Redis, queu
 - fetches the latest protein catalog
 - filters to the products you choose
 - sends the available items with quantity and link to Telegram
-- runs as a 90-minute polling window and checks Amul every 10 minutes during that window
+- runs once per workflow trigger, sends Telegram, and exits
 
 ## Setup
 
@@ -37,7 +37,36 @@ bun run start
 
 ## GitHub Actions
 
-The workflow in `.github/workflows/notify.yml` can be triggered manually and is scheduled with a set of UTC cron entries that approximate an 87-minute cadence.
+The workflow in `.github/workflows/notify.yml` can be triggered manually or from an external call. Each trigger runs the script once and then exits.
+
+To trigger it from outside GitHub Actions, call the repository dispatch API with an access token:
+
+```bash
+curl -X POST \
+	-H "Accept: application/vnd.github+json" \
+	-H "Authorization: Bearer $GITHUB_TOKEN" \
+	https://api.github.com/repos/shreytemp1/amul-products/dispatches \
+	-d '{"event_type":"amul-stock-notify"}'
+```
+
+Any free external scheduler or webhook service that can make an HTTPS POST request can use the same dispatch call every 10 minutes.
+
+### Free external scheduler setup
+
+Use a free cron service like `cron-job.org`:
+
+1. Create a free account at `cron-job.org`.
+2. Create a new cron job that runs every 10 minutes.
+3. Set the request method to `POST`.
+4. Set the URL to `https://api.github.com/repos/shreytemp1/amul-products/dispatches`.
+5. Add these headers:
+   - `Accept: application/vnd.github+json`
+   - `Authorization: Bearer <your GitHub token>`
+   - `Content-Type: application/json`
+6. Set the JSON body to `{"event_type":"amul-stock-notify"}`.
+7. Save and test the job.
+
+For the GitHub token, use a classic personal access token with `repo` scope or a fine-grained token that can dispatch to this repository.
 
 Use repository secrets for:
 
