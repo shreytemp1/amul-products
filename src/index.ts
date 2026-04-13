@@ -18,7 +18,7 @@ const delay = async (milliseconds: number): Promise<void> => {
   })
 }
 
-async function checkAndNotify(client: AmulClient, cycleNumber: number): Promise<void> {
+async function runStockCheck(client: AmulClient, cycleNumber: number): Promise<void> {
   const store = await client.loadStore()
 
   if (store.substore !== env.substoreAlias) {
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     console.log(`[App] Starting poll cycle ${cycleNumber} at +${elapsedMinutes} minute(s)`)
 
     try {
-      await checkAndNotify(client, cycleNumber)
+      await runStockCheck(client, cycleNumber)
     } catch (error) {
       console.error(`[App] Poll cycle ${cycleNumber} failed`, error)
     }
