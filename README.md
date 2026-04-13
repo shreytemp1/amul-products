@@ -9,7 +9,7 @@ This is a minimal clone of the original project. It removes MongoDB, Redis, queu
 - fetches the latest protein catalog
 - filters to the products you choose
 - sends the available items with quantity and link to Telegram
-- is designed to run from GitHub Actions every 7 minutes
+- runs as a 90-minute polling window and checks Amul every 10 minutes during that window
 
 ## Setup
 
@@ -37,7 +37,7 @@ bun run start
 
 ## GitHub Actions
 
-The workflow in `.github/workflows/notify.yml` runs every 7 minutes and can also be triggered manually.
+The workflow in `.github/workflows/notify.yml` can be triggered manually and is scheduled with a set of UTC cron entries that approximate an 87-minute cadence.
 
 Use repository secrets for:
 
