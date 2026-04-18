@@ -84,7 +84,7 @@ export const buildAvailabilityBlocks = (
   substoreAlias: string
 ): string[] => {
   if (products.length === 0) {
-    return ['No target products are currently available.']
+    return []
   }
 
   const header = 'Available products:'
