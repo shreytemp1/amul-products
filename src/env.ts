@@ -4,8 +4,8 @@ import { z } from 'zod'
 
 const defaultProductMatchers = [
   'amul-chocolate-whey-protein-gift-pack-34-g-or-pack-of-10-sachets',
-  'amul-chocolate-whey-protein-34-g-or-pack-of-30-sachets',
-  'amul-chocolate-whey-protein-34-g-or-pack-of-60-sachets',
+  // 'amul-chocolate-whey-protein-34-g-or-pack-of-30-sachets',
+  // 'amul-chocolate-whey-protein-34-g-or-pack-of-60-sachets',
   // 'amul-whey-protein-gift-pack-32-g-or-pack-of-10-sachets',
   // 'amul-whey-protein-32-g-or-pack-of-30-sachets',
   'amul-high-protein-plain-lassi-200-ml-or-pack-of-30',
